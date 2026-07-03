@@ -1,0 +1,21 @@
+{
+  "name": "vocab-quest",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Daily vocabulary learning app for three age tiers",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
