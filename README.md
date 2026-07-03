@@ -1,4 +1,4 @@
-# VocabQuest
+# WordForge
 
 A daily vocabulary training app for three age tiers, built as a 6-week intensive summer course:
 

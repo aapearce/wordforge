@@ -14,7 +14,7 @@ export function renderLogin(container, { onAuthed }) {
   function draw() {
     container.innerHTML = `
       <div class="card" style="max-width:440px;margin:40px auto 0;">
-        <h1 style="text-align:center;">VocabQuest</h1>
+        <h1 style="text-align:center;">WordForge</h1>
         <p class="muted center" style="margin-bottom:22px;">Your daily vocabulary training quest.</p>
         <div id="errorSlot"></div>
         <form id="authForm">

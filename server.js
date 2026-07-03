@@ -24,4 +24,4 @@ app.use('/api/stats', statsRoutes);
 
 app.use(express.static(path.join(__dirname, 'public'), { cacheControl: false }));
 
-app.listen(PORT, () => console.log(`VocabQuest running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`WordForge running on http://localhost:${PORT}`));
