@@ -1,5 +1,5 @@
-import { api } from '../api.js';
-import { refreshTopbarStats } from '../app.js';
+import { api } from '../api.js?v=2';
+import { refreshTopbarStats } from '../app.js?v=2';
 
 export async function renderSentencePractice(container) {
   container.innerHTML = '<div class="spinner">Loading practice words…</div>';
@@ -8,6 +8,7 @@ export async function renderSentencePractice(container) {
 
   if (!words.length) {
     container.innerHTML = `
+      <a class="back-link" href="#/dashboard">← Home</a>
       <div class="card center">
         <h1>No words yet</h1>
         <p class="muted">Do today's Daily 15 first, then come back to practise sentences.</p>
@@ -20,6 +21,7 @@ export async function renderSentencePractice(container) {
 
   function draw() {
     container.innerHTML = `
+      <a class="back-link" href="#/dashboard">← Home</a>
       <div class="card">
         <h1>Use it in a sentence</h1>
         <p class="muted" style="margin-bottom:18px;">Write your own sentence that clearly uses the word below. This is a quick self-check, not formal grading — use it to build confidence.</p>

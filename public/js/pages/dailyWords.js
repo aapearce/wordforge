@@ -1,5 +1,5 @@
-import { api } from '../api.js';
-import { refreshTopbarStats } from '../app.js';
+import { api } from '../api.js?v=2';
+import { refreshTopbarStats } from '../app.js?v=2';
 
 export async function renderDailyWords(container) {
   container.innerHTML = '<div class="spinner">Fetching today\'s words…</div>';
@@ -7,6 +7,7 @@ export async function renderDailyWords(container) {
 
   if (data.courseComplete) {
     container.innerHTML = `
+      <a class="back-link" href="#/dashboard">← Home</a>
       <div class="card center">
         <h1>🎉 All caught up!</h1>
         <p class="muted">${data.message}</p>
@@ -17,23 +18,10 @@ export async function renderDailyWords(container) {
     return;
   }
 
-  if (data.completed) {
-    container.innerHTML = `
-      <div class="card center">
-        <h1>✅ Day ${data.dayIndex} done</h1>
-        <p class="muted">You've already finished today's 15 words. Come back tomorrow for the next set — in the meantime, quiz or practice what you've learned.</p>
-        <div class="btn-row" style="justify-content:center;margin-top:16px;">
-          <a class="btn" href="#/quiz">Take a quiz</a>
-          <a class="btn secondary" href="#/practice/sentence">Practise a sentence</a>
-        </div>
-      </div>`;
-    return;
-  }
-
   const words = data.words;
-  let index = 0;
-  let flipped = false;
-  let seenIds = new Set();
+  const seen = new Set(words.filter((w) => w.seen).map((w) => w.id));
+  const rated = new Map(); // wordId -> true (got it) / false (still learning), this session
+  let completed = data.completed;
   let earnedPoints = 0;
 
   function speak(text) {
@@ -45,86 +33,136 @@ export async function renderDailyWords(container) {
   }
 
   async function markSeen(word) {
-    if (seenIds.has(word.id)) return;
-    seenIds.add(word.id);
+    const isFirst = !seen.has(word.id);
+    seen.add(word.id);
     const res = await api.post('/api/progress/flip', { wordId: word.id });
-    earnedPoints += res.pointsAwarded || 0;
-    refreshTopbarStats();
+    if (isFirst && res.pointsAwarded) {
+      earnedPoints += res.pointsAwarded;
+      refreshTopbarStats();
+    }
   }
 
   async function rate(word, knewIt) {
     await api.post('/api/progress/rate', { wordId: word.id, knewIt });
-    if (index < words.length - 1) {
-      index++;
-      flipped = false;
-      draw();
-    } else {
-      await finish();
-    }
+    rated.set(word.id, knewIt);
+    closeDetail();
+    draw();
   }
 
-  async function finish() {
+  async function finishDay() {
     const res = await api.post('/api/words/complete');
     earnedPoints += res.pointsAwarded || 0;
+    completed = true;
     refreshTopbarStats();
     container.innerHTML = `
+      <a class="back-link" href="#/dashboard">← Home</a>
       <div class="card center">
         <h1>🌟 Day ${data.dayIndex} complete!</h1>
-        <p class="muted">You reviewed all 15 words and earned <b>${earnedPoints} XP</b>.</p>
+        <p class="muted">You worked through all 15 words and earned <b>${earnedPoints} XP</b> this session.</p>
         <p class="muted">Current streak: 🔥 ${res.stats.current_streak} day${res.stats.current_streak === 1 ? '' : 's'}</p>
         <div class="btn-row" style="justify-content:center;margin-top:16px;">
           <a class="btn" href="#/quiz">Quiz yourself</a>
-          <a class="btn secondary" href="#/dashboard">Back to dashboard</a>
+          <a class="btn secondary" href="#/dashboard">Back to home</a>
         </div>
       </div>`;
   }
 
-  function draw() {
-    const word = words[index];
-    const pct = Math.round((index / words.length) * 100);
-    container.innerHTML = `
-      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-      <p class="muted" style="margin-bottom:10px;">Word ${index + 1} of ${words.length} · Day ${data.dayIndex}</p>
-      <div class="flashcard-scene">
-        <div class="flashcard ${flipped ? 'flipped' : ''}" id="card">
-          <div class="flashcard-face front">
-            <div class="card-word">${escapeHtml(word.word)}</div>
-            <div class="card-pos">${escapeHtml(word.pos)}</div>
-            <div class="card-hint">👆 Tap the card to reveal the meaning</div>
-          </div>
-          <div class="flashcard-face back">
-            <div class="card-word" style="font-size:1.5rem;">${escapeHtml(word.word)}
-              <button class="speak-btn" id="speakBtn" title="Hear it" type="button">🔊</button>
-            </div>
-            <div class="card-def">${escapeHtml(word.definition)}</div>
-            <div class="card-row"><b>Synonyms</b><div class="chip-list">${word.synonyms.map((s) => `<span class="chip">${escapeHtml(s)}</span>`).join('')}</div></div>
-            <div class="card-row"><b>Antonyms</b><div class="chip-list">${word.antonyms.map((s) => `<span class="chip">${escapeHtml(s)}</span>`).join('')}</div></div>
-            <div class="card-row"><b>Example</b>${escapeHtml(word.example)}</div>
-          </div>
+  function closeDetail() {
+    const overlay = document.getElementById('wordDetailOverlay');
+    if (overlay) overlay.remove();
+  }
+
+  function openDetail(word) {
+    closeDetail();
+    const readOnly = completed;
+    const overlay = document.createElement('div');
+    overlay.id = 'wordDetailOverlay';
+    overlay.className = 'detail-overlay';
+    overlay.innerHTML = `
+      <div class="detail-card">
+        <button class="detail-close" id="detailClose" type="button">✕</button>
+        <div class="card-word" style="font-size:1.6rem;">${escapeHtml(word.word)}
+          <button class="speak-btn" id="speakBtn" title="Hear it" type="button">🔊</button>
         </div>
-      </div>
-      <div class="rate-row" id="rateRow" style="display:${flipped ? 'grid' : 'none'};">
-        <button class="btn secondary" id="stillLearning">Still learning 🌱</button>
-        <button class="btn success" id="gotIt">Got it! ✅</button>
+        <div class="card-pos">${escapeHtml(word.pos)}</div>
+        <div class="card-def">${escapeHtml(word.definition)}</div>
+        <div class="card-row"><b>Synonyms</b><div class="chip-list">${word.synonyms.map((s) => `<span class="chip">${escapeHtml(s)}</span>`).join('')}</div></div>
+        <div class="card-row"><b>Antonyms</b><div class="chip-list">${word.antonyms.map((s) => `<span class="chip">${escapeHtml(s)}</span>`).join('')}</div></div>
+        <div class="card-row"><b>Example</b>${escapeHtml(word.example)}</div>
+        ${readOnly ? '' : `
+        <div class="rate-row" style="margin-top:16px;">
+          <button class="btn secondary" id="stillLearning">Still learning 🌱</button>
+          <button class="btn success" id="gotIt">Got it! ✅</button>
+        </div>`}
       </div>
     `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeDetail();
+    });
+    overlay.querySelector('#detailClose').addEventListener('click', closeDetail);
+    overlay.querySelector('#speakBtn').addEventListener('click', () => speak(word.word));
+    if (!readOnly) {
+      overlay.querySelector('#stillLearning').addEventListener('click', () => rate(word, false));
+      overlay.querySelector('#gotIt').addEventListener('click', () => rate(word, true));
+    }
+  }
 
-    container.querySelector('#card').addEventListener('click', async (e) => {
-      if (e.target.closest('#speakBtn')) return;
-      if (!flipped) {
-        flipped = true;
-        await markSeen(word);
+  function tileStateClass(word) {
+    if (rated.has(word.id)) return rated.get(word.id) ? 'done-good' : 'done-learn';
+    if (seen.has(word.id)) return 'seen';
+    return '';
+  }
+
+  function tileBadge(word) {
+    if (rated.has(word.id)) return rated.get(word.id) ? '✅' : '🌱';
+    if (seen.has(word.id)) return '👀';
+    return '❔';
+  }
+
+  function draw() {
+    const ratedCount = rated.size;
+    const allSeen = words.every((w) => seen.has(w.id));
+    const pct = Math.round((ratedCount / words.length) * 100);
+
+    container.innerHTML = `
+      <a class="back-link" href="#/dashboard">← Home</a>
+      <div class="card" style="padding:20px;">
+        <h1 style="font-size:1.3rem;">Day ${data.dayIndex} · Daily 15</h1>
+        ${completed
+          ? '<p class="muted">✅ Today\'s set is complete — tap any tile to review its meaning. New words tomorrow!</p>'
+          : `<p class="muted">Tap a tile to reveal the meaning, then mark it <b>Got it</b> or <b>Still learning</b>. ${ratedCount}/15 done.</p>
+             <div class="progress-track" style="margin-bottom:0;"><div class="progress-fill" style="width:${pct}%"></div></div>`}
+      </div>
+      <div class="tile-grid">
+        ${words.map((w, i) => `
+          <button class="word-tile ${tileStateClass(w)}" data-idx="${i}" type="button">
+            <span class="tile-badge">${tileBadge(w)}</span>
+            <span class="tile-word">${escapeHtml(w.word)}</span>
+            <span class="tile-pos">${escapeHtml(w.pos)}</span>
+          </button>
+        `).join('')}
+      </div>
+      ${!completed ? `
+      <div class="btn-row" style="margin-top:20px;">
+        <button class="btn block" id="finishBtn" ${ratedCount === words.length || allSeen ? '' : 'disabled'}>
+          ${ratedCount === words.length ? 'Finish Day ' + data.dayIndex + ' 🌟' : allSeen ? 'Finish Day ' + data.dayIndex + ' 🌟' : 'Reveal and rate all 15 to finish'}
+        </button>
+      </div>` : ''}
+    `;
+
+    container.querySelectorAll('.word-tile').forEach((tile) => {
+      tile.addEventListener('click', async () => {
+        const word = words[Number(tile.dataset.idx)];
+        if (!completed) await markSeen(word);
+        openDetail(word);
         draw();
-      }
+        // re-open detail after redraw removed it? detail lives on body, unaffected by container redraw
+      });
     });
 
-    const speakBtn = container.querySelector('#speakBtn');
-    if (speakBtn) speakBtn.addEventListener('click', () => speak(word.word));
-
-    const stillLearning = container.querySelector('#stillLearning');
-    const gotIt = container.querySelector('#gotIt');
-    if (stillLearning) stillLearning.addEventListener('click', () => rate(word, false));
-    if (gotIt) gotIt.addEventListener('click', () => rate(word, true));
+    const finishBtn = container.querySelector('#finishBtn');
+    if (finishBtn) finishBtn.addEventListener('click', finishDay);
   }
 
   draw();

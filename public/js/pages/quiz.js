@@ -1,12 +1,17 @@
-import { api } from '../api.js';
-import { refreshTopbarStats } from '../app.js';
+import { api } from '../api.js?v=2';
+import { refreshTopbarStats } from '../app.js?v=2';
 
-export async function renderQuiz(container) {
+export async function renderQuiz(container, opts = {}) {
+  const endpoint = opts.endpoint || '/api/quiz/today';
+  const title = opts.title || 'Quiz';
+  const backHash = opts.backHash || '#/dashboard';
+
   container.innerHTML = '<div class="spinner">Building your quiz…</div>';
-  const data = await api.get('/api/quiz/today');
+  const data = await api.get(endpoint);
 
   if (!data.questions.length) {
     container.innerHTML = `
+      <a class="back-link" href="${backHash}">← Back</a>
       <div class="card center">
         <h1>Not quite yet</h1>
         <p class="muted">${data.message}</p>
@@ -23,8 +28,9 @@ export async function renderQuiz(container) {
   function draw() {
     const q = questions[index];
     container.innerHTML = `
+      <a class="back-link" href="${backHash}">← Back</a>
       <div class="card">
-        <p class="quiz-progress">Question ${index + 1} of ${questions.length}</p>
+        <p class="quiz-progress">${title} · Question ${index + 1} of ${questions.length}</p>
         <div class="progress-track"><div class="progress-fill" style="width:${(index / questions.length) * 100}%"></div></div>
         <p class="quiz-prompt" style="margin-top:16px;">${escapeHtml(q.prompt)}</p>
         <div class="quiz-choices" id="choices">
@@ -62,9 +68,10 @@ export async function renderQuiz(container) {
     const res = await api.post('/api/quiz/submit', { answers });
     refreshTopbarStats();
     container.innerHTML = `
+      <a class="back-link" href="${backHash}">← Back</a>
       <div class="card">
         <div class="score-badge">${res.score}<span class="of">/ ${res.total} correct</span></div>
-        <p class="muted">Nice work — that's +${res.score * 10} XP.</p>
+        <p class="muted">Nice work — that's +${res.score * 10} XP.${res.score < res.total ? ' Missed words go into your Tricky Words pile.' : ''}</p>
         <div class="result-list">
           ${res.results.map((r) => `
             <div class="result-row ${r.correct ? 'correct' : 'incorrect'}">
@@ -74,7 +81,8 @@ export async function renderQuiz(container) {
           `).join('')}
         </div>
         <div class="btn-row">
-          <a class="btn" href="#/dashboard">Back to dashboard</a>
+          <a class="btn" href="#/dashboard">Back to home</a>
+          ${res.score < res.total ? '<a class="btn secondary" href="#/mistakes">Review tricky words</a>' : ''}
         </div>
       </div>
     `;

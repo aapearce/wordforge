@@ -40,6 +40,23 @@ router.get('/today', requireAuth, (req, res) => {
   res.json({ questions });
 });
 
+router.get('/mistakes', requireAuth, (req, res) => {
+  const { id: userId, ageTier: tier } = req.user;
+  const rows = db
+    .prepare(
+      'SELECT word_id FROM word_progress WHERE user_id = ? AND tier = ? AND times_wrong > 0 ORDER BY times_wrong DESC, last_reviewed_at ASC LIMIT ?'
+    )
+    .all(userId, tier, QUIZ_LENGTH);
+
+  if (rows.length === 0) {
+    return res.json({ questions: [], message: 'No tricky words right now — every mistake has been cleared. Great work!' });
+  }
+
+  const tierWords = wordbank.loadTier(tier).words;
+  const questions = rows.map((r) => buildQuestion(r.word_id, tierWords)).filter(Boolean);
+  res.json({ questions });
+});
+
 router.post('/submit', requireAuth, (req, res) => {
   const { id: userId, ageTier: tier } = req.user;
   const { answers } = req.body || {};
@@ -62,9 +79,10 @@ router.post('/submit', requireAuth, (req, res) => {
     const existing = db.prepare('SELECT * FROM word_progress WHERE user_id = ? AND word_id = ?').get(userId, word.id);
     if (existing) {
       const newBox = advanceBox(existing.leitner_box, correct);
+      const newWrong = correct ? Math.max(existing.times_wrong - 1, 0) : existing.times_wrong + 1;
       db.prepare(
-        'UPDATE word_progress SET leitner_box = ?, times_correct = times_correct + ?, last_reviewed_at = ?, next_due_at = ? WHERE id = ?'
-      ).run(newBox, correct ? 1 : 0, now, nextDueDate(newBox), existing.id);
+        'UPDATE word_progress SET leitner_box = ?, times_correct = times_correct + ?, times_wrong = ?, last_reviewed_at = ?, next_due_at = ? WHERE id = ?'
+      ).run(newBox, correct ? 1 : 0, newWrong, now, nextDueDate(newBox), existing.id);
     }
   }
 

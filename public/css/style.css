@@ -329,5 +329,112 @@ textarea { resize: vertical; min-height: 90px; }
 .center { text-align: center; }
 .spinner { text-align: center; padding: 60px 0; color: var(--text-muted); }
 
+/* Back navigation */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+}
+.back-link:hover { color: var(--tier-color); }
+
+/* Dashboard tile badge (e.g. tricky-word count) */
+.badge {
+  display: inline-block;
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: white;
+  font-size: 0.75rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Word tile grid (Daily 15 / Tricky words) */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.word-tile {
+  position: relative;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 18px 8px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 84px;
+  transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.word-tile:hover { border-color: var(--tier-color); }
+.word-tile:active { transform: scale(0.96); }
+.word-tile .tile-word { font-weight: 800; font-size: 0.95rem; color: var(--tier-color); word-break: break-word; }
+.word-tile .tile-pos { font-size: 0.7rem; font-style: italic; color: var(--text-muted); }
+.word-tile .tile-badge { position: absolute; top: 5px; right: 7px; font-size: 0.7rem; }
+.word-tile.seen { background: var(--tier-color-light); }
+.word-tile.done-good { background: var(--success-light); border-color: var(--success); }
+.word-tile.done-good .tile-word { color: var(--success); }
+.word-tile.done-learn { background: #fff6e5; border-color: var(--accent); }
+
+@media (max-width: 420px) {
+  .tile-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 640px) {
+  .tile-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* Word detail overlay */
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(32, 28, 52, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.detail-card {
+  position: relative;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 26px;
+  max-width: 440px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  text-align: center;
+}
+.detail-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: var(--bg);
+  border: none;
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.detail-card .card-row { text-align: center; }
+.detail-card .chip-list { justify-content: center; }
+
 table.stats-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 table.stats-table th, table.stats-table td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }

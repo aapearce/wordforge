@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS word_progress (
   leitner_box INTEGER NOT NULL DEFAULT 1,
   times_seen INTEGER NOT NULL DEFAULT 0,
   times_correct INTEGER NOT NULL DEFAULT 0,
+  times_wrong INTEGER NOT NULL DEFAULT 0,
   first_seen_at TEXT,
   last_reviewed_at TEXT,
   next_due_at TEXT,

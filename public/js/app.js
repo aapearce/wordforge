@@ -1,48 +1,29 @@
-import { api } from './api.js';
-import { state, setUser } from './state.js';
-import { renderLogin } from './pages/login.js';
-import { renderDashboard } from './pages/dashboard.js';
-import { renderDailyWords } from './pages/dailyWords.js';
-import { renderQuiz } from './pages/quiz.js';
-import { renderSentencePractice } from './pages/sentencePractice.js';
-import { renderParagraphPractice } from './pages/paragraphPractice.js';
-import { renderStats } from './pages/stats.js';
+import { api } from './api.js?v=2';
+import { state, setUser } from './state.js?v=2';
+import { renderLogin } from './pages/login.js?v=2';
+import { renderDashboard } from './pages/dashboard.js?v=2';
+import { renderDailyWords } from './pages/dailyWords.js?v=2';
+import { renderQuiz } from './pages/quiz.js?v=2';
+import { renderSentencePractice } from './pages/sentencePractice.js?v=2';
+import { renderParagraphPractice } from './pages/paragraphPractice.js?v=2';
+import { renderStats } from './pages/stats.js?v=2';
+import { renderMistakes } from './pages/mistakes.js?v=2';
 
 const appEl = document.getElementById('app');
 const topbarEl = document.getElementById('topbar');
-const topnavEl = document.getElementById('topnav');
 const topbarStatsEl = document.getElementById('topbarStats');
-
-const NAV_LINKS = [
-  { hash: '#/dashboard', label: 'Home' },
-  { hash: '#/daily', label: 'Daily 15' },
-  { hash: '#/quiz', label: 'Quiz' },
-  { hash: '#/practice/sentence', label: 'Sentence' },
-  { hash: '#/practice/paragraph', label: 'Paragraph' },
-  { hash: '#/stats', label: 'Progress' },
-];
 
 const ROUTES = {
   '#/daily': renderDailyWords,
-  '#/quiz': renderQuiz,
+  '#/quiz': (el) => renderQuiz(el, { endpoint: '/api/quiz/today', title: 'Quiz' }),
+  '#/mistakes': renderMistakes,
+  '#/mistakes/test': (el) =>
+    renderQuiz(el, { endpoint: '/api/quiz/mistakes', title: 'Tricky words test', backHash: '#/mistakes' }),
   '#/practice/sentence': renderSentencePractice,
   '#/practice/paragraph': renderParagraphPractice,
   '#/stats': renderStats,
   '#/dashboard': renderDashboard,
 };
-
-function renderTopbar() {
-  if (!state.user) {
-    topbarEl.hidden = true;
-    return;
-  }
-  topbarEl.hidden = false;
-  const current = window.location.hash || '#/dashboard';
-  topnavEl.innerHTML = NAV_LINKS.map(
-    (l) => `<a href="${l.hash}" class="${current === l.hash ? 'active' : ''}">${l.label}</a>`
-  ).join('');
-  renderTopbarStatsPills();
-}
 
 async function renderTopbarStatsPills() {
   try {
@@ -84,7 +65,8 @@ async function route() {
     return;
   }
 
-  renderTopbar();
+  topbarEl.hidden = false;
+  renderTopbarStatsPills();
   const hash = window.location.hash || '#/dashboard';
   const renderer = ROUTES[hash] || renderDashboard;
   try {

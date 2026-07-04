@@ -22,6 +22,10 @@ app.use('/api/quiz', quizRoutes);
 app.use('/api/practice', practiceRoutes);
 app.use('/api/stats', statsRoutes);
 
-app.use(express.static(path.join(__dirname, 'public'), { cacheControl: false }));
+app.use(
+  express.static(path.join(__dirname, 'public'), {
+    setHeaders: (res) => res.setHeader('Cache-Control', 'no-store'),
+  })
+);
 
 app.listen(PORT, () => console.log(`WordForge running on http://localhost:${PORT}`));

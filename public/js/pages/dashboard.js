@@ -1,15 +1,16 @@
-import { api } from '../api.js';
-import { state } from '../state.js';
+import { api } from '../api.js?v=2';
+import { state } from '../state.js?v=2';
 
 const TIER_LABEL = { '9-12': '11+ track', '12-18': 'GCSE / A-level track', '18+': 'Advanced literature track' };
 
 export async function renderDashboard(container) {
   container.innerHTML = '<div class="spinner">Loading your quest…</div>';
-  const data = await api.get('/api/stats');
+  const [data, mistakes] = await Promise.all([api.get('/api/stats'), api.get('/api/progress/mistakes')]);
   state.stats = data;
 
   const { stats, level, wordsSeen, wordsMastered } = data;
   const pct = Math.round((level.pointsIntoLevel / level.pointsForNextLevel) * 100);
+  const mistakeCount = mistakes.words.length;
 
   container.innerHTML = `
     <div class="dash-hero">
@@ -28,12 +29,17 @@ export async function renderDashboard(container) {
       <button class="action-card" data-go="#/daily">
         <span class="icon">📇</span>
         <div class="title">Daily 15</div>
-        <div class="desc">Today's flashcards — new words, synonyms &amp; antonyms.</div>
+        <div class="desc">Today's 15 words — tap each tile to reveal its meaning.</div>
       </button>
       <button class="action-card" data-go="#/quiz">
         <span class="icon">🧠</span>
-        <div class="title">Test yourself</div>
-        <div class="desc">A quiz drawing on everything you've learned so far.</div>
+        <div class="title">Quiz</div>
+        <div class="desc">A test drawing on everything you've learned so far.</div>
+      </button>
+      <button class="action-card" data-go="#/mistakes">
+        <span class="icon">🔁</span>
+        <div class="title">Tricky words${mistakeCount ? ` <span class="badge">${mistakeCount}</span>` : ''}</div>
+        <div class="desc">${mistakeCount ? 'Review and re-test the words you\'ve slipped on.' : 'No mistakes to fix right now — nice!'}</div>
       </button>
       <button class="action-card" data-go="#/practice/sentence">
         <span class="icon">✍️</span>
@@ -44,6 +50,11 @@ export async function renderDashboard(container) {
         <span class="icon">📝</span>
         <div class="title">Paragraph challenge</div>
         <div class="desc">Weave today's 15 words into a short paragraph.</div>
+      </button>
+      <button class="action-card" data-go="#/stats">
+        <span class="icon">📊</span>
+        <div class="title">Progress</div>
+        <div class="desc">Your XP, streaks, quiz history, and practice scores.</div>
       </button>
     </div>
   `;

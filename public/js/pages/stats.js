@@ -1,4 +1,4 @@
-import { api } from '../api.js';
+import { api } from '../api.js?v=2';
 
 export async function renderStats(container) {
   container.innerHTML = '<div class="spinner">Loading your progress…</div>';
@@ -6,6 +6,7 @@ export async function renderStats(container) {
   const { stats, level, wordsSeen, wordsMastered, recentQuizzes, recentPractice } = data;
 
   container.innerHTML = `
+    <a class="back-link" href="#/dashboard">← Home</a>
     <div class="card">
       <h1>Your progress</h1>
       <div class="dash-stats-grid" style="margin-top:10px;">

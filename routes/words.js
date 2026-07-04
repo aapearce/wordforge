@@ -15,7 +15,7 @@ router.get('/daily', requireAuth, (req, res) => {
   if (existing) {
     const wordIds = JSON.parse(existing.word_ids);
     const words = wordIds.map((id) => wordbank.findWord(tier, id)).filter(Boolean);
-    return res.json({ dayIndex: existing.day_index, words, completed: !!existing.completed_at, isNew: false });
+    return res.json({ dayIndex: existing.day_index, words: withSeenFlags(userId, words), completed: !!existing.completed_at, isNew: false });
   }
 
   const priorCount = db.prepare('SELECT COUNT(*) c FROM daily_sessions WHERE user_id = ?').get(userId).c;
@@ -40,8 +40,14 @@ router.get('/daily', requireAuth, (req, res) => {
     dayIndex,
     JSON.stringify(words.map((w) => w.id))
   );
-  res.json({ dayIndex, words, completed: false, isNew: true });
+  res.json({ dayIndex, words: withSeenFlags(userId, words), completed: false, isNew: true });
 });
+
+function withSeenFlags(userId, words) {
+  const rows = db.prepare('SELECT word_id, last_reviewed_at FROM word_progress WHERE user_id = ?').all(userId);
+  const seen = new Set(rows.map((r) => r.word_id));
+  return words.map((w) => ({ ...w, seen: seen.has(w.id) }));
+}
 
 router.post('/complete', requireAuth, (req, res) => {
   const { id: userId } = req.user;

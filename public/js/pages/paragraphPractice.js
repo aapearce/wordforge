@@ -1,5 +1,5 @@
-import { api } from '../api.js';
-import { refreshTopbarStats } from '../app.js';
+import { api } from '../api.js?v=2';
+import { refreshTopbarStats } from '../app.js?v=2';
 
 export async function renderParagraphPractice(container) {
   container.innerHTML = '<div class="spinner">Loading today\'s words…</div>';
@@ -8,6 +8,7 @@ export async function renderParagraphPractice(container) {
 
   if (!words.length) {
     container.innerHTML = `
+      <a class="back-link" href="#/dashboard">← Home</a>
       <div class="card center">
         <h1>No words yet</h1>
         <p class="muted">Do today's Daily 15 first, then come back for the paragraph challenge.</p>
@@ -18,6 +19,7 @@ export async function renderParagraphPractice(container) {
 
   function draw() {
     container.innerHTML = `
+      <a class="back-link" href="#/dashboard">← Home</a>
       <div class="card">
         <h1>Paragraph challenge</h1>
         <p class="muted" style="margin-bottom:14px;">Write a short paragraph (aim for 60+ words) that uses as many of today's 15 words as you can. This is an automatic self-check for word usage, not full writing feedback.</p>

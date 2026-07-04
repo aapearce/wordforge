@@ -43,12 +43,29 @@ router.post('/rate', requireAuth, (req, res) => {
   if (!existing) return res.status(404).json({ error: 'You have not seen this word yet' });
 
   const newBox = advanceBox(existing.leitner_box, knewIt);
+  const newWrong = knewIt ? Math.max(existing.times_wrong - 1, 0) : existing.times_wrong + 1;
   db.prepare(
-    'UPDATE word_progress SET leitner_box = ?, times_correct = times_correct + ?, last_reviewed_at = ?, next_due_at = ? WHERE id = ?'
-  ).run(newBox, knewIt ? 1 : 0, new Date().toISOString(), nextDueDate(newBox), existing.id);
+    'UPDATE word_progress SET leitner_box = ?, times_correct = times_correct + ?, times_wrong = ?, last_reviewed_at = ?, next_due_at = ? WHERE id = ?'
+  ).run(newBox, knewIt ? 1 : 0, newWrong, new Date().toISOString(), nextDueDate(newBox), existing.id);
 
   touchActivity(userId);
   res.json({ ok: true, leitnerBox: newBox });
+});
+
+router.get('/mistakes', requireAuth, (req, res) => {
+  const { id: userId, ageTier: tier } = req.user;
+  const rows = db
+    .prepare(
+      'SELECT word_id, times_wrong, times_seen, leitner_box FROM word_progress WHERE user_id = ? AND tier = ? AND times_wrong > 0 ORDER BY times_wrong DESC, last_reviewed_at ASC'
+    )
+    .all(userId, tier);
+  const words = rows
+    .map((r) => {
+      const word = wordbank.findWord(tier, r.word_id);
+      return word ? { ...word, timesWrong: r.times_wrong, leitnerBox: r.leitner_box } : null;
+    })
+    .filter(Boolean);
+  res.json({ words });
 });
 
 module.exports = router;

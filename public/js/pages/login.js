@@ -1,5 +1,5 @@
-import { api } from '../api.js';
-import { setUser } from '../state.js';
+import { api } from '../api.js?v=2';
+import { setUser } from '../state.js?v=2';
 
 const TIERS = [
   { value: '9-12', title: 'Ages 9-12', sub: 'Building toward 11+ entrance exams' },
