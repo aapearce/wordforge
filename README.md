@@ -17,7 +17,7 @@ A daily vocabulary training app for three age tiers, built as a 6-week intensive
 
 ## Content status
 
-Each tier currently ships with **2 weeks of curated content (Day 1–7 seeded so far, 105 words per tier)**. The data files (`data/words/*.json`) are structured to hold the full 6-week / 42-day course — additional days can be appended without any code changes. When a learner reaches the last available day, the app tells them more is coming rather than failing.
+Each tier currently ships with **2 weeks of curated content (Days 1–14, 210 words per tier, 630 words total)**. The data files (`data/words/*.json`) are structured to hold the full 6-week / 42-day course — additional days can be appended without any code changes. When a learner reaches the last available day, the app tells them more is coming rather than failing.
 
 ## Grading is rule-based, not AI-graded
 
